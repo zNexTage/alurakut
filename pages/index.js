@@ -8,7 +8,7 @@ function ProfileSidebar(props) {
     <Box>
       <img
         style={{ borderRadius: 8 }}
-        src={`https://github.com/${props.githubUser}.png`}
+        src={`https://pbs.twimg.com/profile_images/1284164326639775745/TPrxZUca_400x400.jpg`}
         alt="Avatar" />
     </Box>
   )
