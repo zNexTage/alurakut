@@ -23,7 +23,7 @@ function ProfileSidebar(props) {
   )
 }
 
-function ProfileRelationsBox({ title, items }) {
+function ProfileRelationsBox({ title, items, keyText }) {
   return (
     <ProfileRelationsBoxWrapper>
       <h2 className="smallTitle">
@@ -34,6 +34,7 @@ function ProfileRelationsBox({ title, items }) {
           if (index <= 5) {
             return (
               <ProfileRelationItem
+                key={`${keyText}_${item.id}`}
                 {...item}
               />
             )
@@ -62,19 +63,7 @@ function ProfileRelationItem({ id, title, image }) {
 
 export default function Home() {
   const [followers, setFollowers] = React.useState([]);
-  const [communities, setCommunities] = React.useState([{
-    id: new Date().toISOString(),
-    title: "Eu odeio acordar cedo",
-    image: "https://alurakut.vercel.app/capa-comunidade-01.jpg"
-  }, {
-    id: 2,
-    title: "Colheita Feliz",
-    image: "https://alurakut.vercel.app/capa-comunidade-01.jpg"
-  }, {
-    id: 3,
-    title: "Cafemania",
-    image: "https://alurakut.vercel.app/capa-comunidade-01.jpg"
-  }]);
+  const [communities, setCommunities] = React.useState([]);
 
   const githubUser = 'zNexTage';
   const favoritePeople = [
@@ -101,7 +90,7 @@ export default function Home() {
       title: "marcobrunodev",
       image: "https://github.com/marcobrunodev.png"
     }, {
-      id: 5,
+      id: 6,
       title: "felipefialho",
       image: "https://github.com/felipefialho.png"
     }
@@ -124,6 +113,44 @@ export default function Home() {
 
         setFollowers(formatFollowes);
       });
+
+    console.log('ALO MUNDO')
+
+    fetch('https://graphql.datocms.com/', {
+      method: "POST",
+      headers: {
+        'Authorization': '5b757849f3f8959774f3bbe5bc40e7',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        'query': `query {
+        allCommunities {
+          id
+          title
+          creatorname
+          imageurl
+          _status
+          _firstPublishedAt
+        } 
+      }`})
+    }).then(response => response.json())
+      .then(({ data }) => {
+        const { allCommunities } = data;
+
+        const formatAllCommunities = allCommunities.map(({ id, title, imageurl }) => {
+          return {
+            id,
+            title,
+            image: imageurl
+          }
+        })
+
+        setCommunities([...formatAllCommunities]);
+      })
+      .catch((err) => {
+
+      })
   }, []);
 
 
@@ -133,14 +160,31 @@ export default function Home() {
     const formData = new FormData(event.target);
 
     const community = {
-      id: new Date().toISOString(),
       title: formData.get('title'),
-      image: formData.get('image')
+      imageurl: formData.get('image'),
+      creatorname: githubUser
     };
 
-    const updatedCommunities = [...communities, community];
+    fetch('/api/communities', {
+      method: "POST",
+      body: JSON.stringify({ ...community }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(async (response) => {
+      const { data } = await response.json();
+      debugger;
 
-    setCommunities(updatedCommunities);
+      const updatedCommunities = [...communities, {
+        id: data.id,
+        title: data.title,
+        image: data.imageurl
+      }];
+
+      setCommunities([...updatedCommunities]);
+    })
+
+
   }
 
   return (
@@ -192,16 +236,19 @@ export default function Home() {
           <ProfileRelationsBox
             title="Comunidades"
             items={communities}
+            keyText="community"
           />
 
           <ProfileRelationsBox
             title="Pessoas da Comunidades"
             items={favoritePeople}
+            keyText="person"
           />
 
           <ProfileRelationsBox
             title="Seguidores"
             items={followers}
+            keyText="follower"
           />
         </div>
       </MainGrid>
